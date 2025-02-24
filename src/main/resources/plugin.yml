@@ -7,3 +7,7 @@ commands:
     description: Indexes chest shops in predefined regions
     permission: shopdb.runindex
     default: op
+  sdbr:
+    description: Reload ShopDB configuration
+    permission: shopdb.reload
+    default: op

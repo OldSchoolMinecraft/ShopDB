@@ -79,6 +79,18 @@ public class ShopDB extends JavaPlugin
             return true;
         }
 
+        if (label.equalsIgnoreCase("sdbr"))
+        {
+            if (!(sender.hasPermission("shopdb.reload") || sender.isOp()))
+            {
+                sender.sendMessage(ChatColor.RED + "You don't have permission to run this command!");
+                return true;
+            }
+
+            config.reload();
+            sender.sendMessage(ChatColor.GREEN + "Reloaded ShopDB configuration");
+        }
+
         return false;
     }
 
