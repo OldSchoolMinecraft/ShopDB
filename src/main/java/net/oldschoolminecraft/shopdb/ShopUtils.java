@@ -16,43 +16,35 @@ public class ShopUtils
 {
     public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ)
     {
-        // get all loaded chunks inside the specified region
-        List<Chunk> chunks = new ArrayList<>();
-        for (int x = startX; x < endX; x++)
+        List<WrappedShop> shops = new ArrayList<>();
+
+        // Iterate through chunks in the specified region
+        for (int x = (startX >> 4); x <= (endX >> 4); x++)
         {
-            for (int z = startZ; z < endZ; z++)
+            for (int z = (startZ >> 4); z <= (endZ >> 4); z++)
             {
                 Chunk chunk = world.getChunkAt(x, z);
-                if (!chunk.isLoaded()) chunk.load(true);
-                chunks.add(chunk);
+                if (!chunk.isLoaded())
+                    chunk.load();
+
+                // Iterate through tile entities in the chunk
+                for (BlockState blockState : chunk.getTileEntities())
+                {
+                    if (blockState.getType() == Material.CHEST)
+                    {
+                        Chest chest = (Chest) blockState;
+                        Sign sign = uBlock.findSign(chest.getBlock());
+                        if (sign != null && uSign.isValid(sign))
+                        {
+                            shops.add(new WrappedShop(chest, sign));
+                        } else {
+                            System.out.println("[ShopDB] Chest is missing sign or sign is invalid @ " + chest.getBlock().getLocation());
+                        }
+                    }
+                }
             }
         }
 
-        // get all valid chest shops from each chunk inside the specified region
-        List<WrappedShop> shops = new ArrayList<>();
-        for (Chunk chunk : chunks)
-        {
-            if (!chunk.isLoaded())
-            {
-                System.out.println("[ShopDB] Could not process chunk as it was unloaded @ " + chunk.getX() + ", " + chunk.getZ());
-                continue;
-            }
-            List<WrappedShop> chestsFromChunk = getShopsInChunk(world, chunk.getX(), chunk.getZ());
-            if (!chestsFromChunk.isEmpty()) shops.addAll(chestsFromChunk);
-        }
-        return shops;
-    }
-
-    public static List<WrappedShop> getShopsInChunk(World world, int x, int z)
-    {
-        List<WrappedShop> shops = new ArrayList<>();
-        for (BlockState blockState : world.getChunkAt(x, z).getTileEntities())
-        {
-            if (blockState.getType() != Material.CHEST) continue;
-            Chest chest = (Chest) blockState;
-            Sign sign = uBlock.findSign(chest.getBlock());
-            if (sign != null && uSign.isValid(sign)) shops.add(new WrappedShop(chest, sign));
-        }
         return shops;
     }
 }
