@@ -2,3 +2,8 @@ name: ShopDB
 version: 1.0
 author: moderator_man
 main: net.oldschoolminecraft.shopdb.ShopDB
+commands:
+  runshopindex:
+    description: Indexes chest shops in predefined regions
+    permission: shopdb.runindex
+    default: op
