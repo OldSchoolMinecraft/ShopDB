@@ -2,4 +2,3 @@ name: ShopDB
 version: 1.0
 author: moderator_man
 main: net.oldschoolminecraft.shopdb.ShopDB
-depend: [ChestShop]

@@ -1,5 +1,6 @@
 package net.oldschoolminecraft.shopdb;
 
+import com.Acrobot.ChestShop.ChestShop;
 import com.google.gson.Gson;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -22,6 +23,9 @@ public class ShopDB extends JavaPlugin
     public void onEnable()
     {
         config = new ShopDBConfig(new File(getDataFolder(), "config.yml"));
+        ChestShop chestShop = (ChestShop) getServer().getPluginManager().getPlugin("ChestShop");
+        if (chestShop == null)
+            System.out.println("[ShopDB] ChestShop appears to not have been loaded yet. The first sweep will be delayed by 3 minutes.");
 
         getServer().getScheduler().scheduleAsyncRepeatingTask(this, () ->
         {
@@ -44,7 +48,7 @@ public class ShopDB extends JavaPlugin
             }
             Instant duration = Instant.now().minus(start.getNano(), ChronoUnit.NANOS);
             System.out.println("[ShopDB] Finished shop DB update in " + TimeUnit.NANOSECONDS.toSeconds(duration.getNano()) + " seconds");
-        }, (20 * 60) * 5, (20 * 60) * 60); // once per hour with a 5-minute initial delay from startup
+        }, (chestShop == null) ? (20 * 60) * 3 : 0L, (20 * 60) * 60); // once per hour with a 3-minute initial delay from startup if chest shop hasn't been loaded yet
 
         System.out.println("ShopDB enabled");
     }

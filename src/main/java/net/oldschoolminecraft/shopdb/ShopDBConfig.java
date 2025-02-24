@@ -36,10 +36,10 @@ public class ShopDBConfig extends Configuration
         {
             int startX, endX, startZ, endZ;
 
-            String[] nameParts = str.split(":");
-            String regionName = nameParts[0];
-            String worldName = nameParts[1];
-            String[] dataParts = str.split("/");
+            String[] mainParts = str.split(":");
+            String regionName = mainParts[0];
+            String worldName = mainParts[1];
+            String[] dataParts = mainParts[2].split("/");
             String[] xRawParts = dataParts[0].split(",");
             String[] zRawParts = dataParts[1].split(",");
             startX = Integer.parseInt(xRawParts[0]);
