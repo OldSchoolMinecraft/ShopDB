@@ -48,7 +48,7 @@ public class WrappedShop
         try
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            String data = owner + buyPrice + sellPrice + stockedMaterial.name() + unit + availableStock;
+            String data = owner + buyPrice + sellPrice + stockedMaterial.name() + unit + availableStock + "@" + sign.getBlock().getLocation().toString();
             byte[] hashBytes = digest.digest(data.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder hexString = new StringBuilder();
