@@ -75,7 +75,7 @@ public class ShopDB extends JavaPlugin
         }
 
         Instant duration = Instant.now().minus(start.getNano(), ChronoUnit.NANOS);
-        String msg = "Finished shop DB update in " + TimeUnit.NANOSECONDS.toSeconds(duration.getNano()) + " seconds";
+        String msg = "Finished shop DB update in " + TimeUnit.NANOSECONDS.toMillis(duration.getNano()) + "ms";
         System.out.println("[ShopDB] " + msg);
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);
     }

@@ -22,7 +22,7 @@ public class WrappedShop
     private Material stockedMaterial;
     private int unit;
     private int availableStock;
-    private String hash;
+    private String shopDataHash;
 
     public WrappedShop(Chest chest, Sign sign)
     {
@@ -35,12 +35,12 @@ public class WrappedShop
         this.stockedMaterial = stock.getType();
         this.unit = uSign.itemAmount(sign.getLine(1));
         this.availableStock = uInventory.amount(chest.getInventory(), stock, stock.getDurability());
-        hash = generateHash();
+        shopDataHash = generateHash();
     }
 
     public String getHash()
     {
-        return hash;
+        return shopDataHash;
     }
 
     private String generateHash()
@@ -65,7 +65,7 @@ public class WrappedShop
     public ShopDataModel getSerializable()
     {
         Location signLoc = sign.getBlock().getLocation();
-        return new ShopDataModel(owner, availableStock, stockedMaterial.getId(), canBuy(), canSell(), buyPrice, sellPrice, unit, new ShopDataModel.ShopLocation(signLoc.getBlockX(), signLoc.getBlockY(), signLoc.getBlockZ()));
+        return new ShopDataModel(owner, availableStock, stockedMaterial.getId(), canBuy(), canSell(), buyPrice, sellPrice, unit, getHash(), new ShopDataModel.ShopLocation(signLoc.getBlockX(), signLoc.getBlockY(), signLoc.getBlockZ()));
     }
 
     public Material getStockedMaterial()
