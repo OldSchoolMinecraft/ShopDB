@@ -1,7 +1,9 @@
 package net.oldschoolminecraft.shopdb;
 
 import com.Acrobot.ChestShop.Items.Items;
+import com.Acrobot.ChestShop.Utils.uInventory;
 import com.Acrobot.ChestShop.Utils.uSign;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
@@ -15,6 +17,7 @@ public class WrappedShop
     private float buyPrice, sellPrice;
     private Material stockedMaterial;
     private int unit;
+    private int availableStock;
 
     public WrappedShop(Chest chest, Sign sign)
     {
@@ -23,13 +26,16 @@ public class WrappedShop
         this.owner = sign.getLine(0);
         this.buyPrice = uSign.buyPrice(sign.getLine(2));
         this.sellPrice = uSign.sellPrice(sign.getLine(2));
-        this.stockedMaterial = Items.getItemStack(sign.getLine(3)).getType();
+        ItemStack stock = Items.getItemStack(sign.getLine(3));
+        this.stockedMaterial = stock.getType();
         this.unit = uSign.itemAmount(sign.getLine(1));
+        this.availableStock = uInventory.amount(chest.getInventory(), stock, stock.getDurability());
     }
 
     public ShopDataModel getSerializable()
     {
-        return new ShopDataModel(owner, stockedMaterial.getId(), canBuy(), canSell(), buyPrice, sellPrice, unit);
+        Location signLoc = sign.getBlock().getLocation();
+        return new ShopDataModel(owner, availableStock, stockedMaterial.getId(), canBuy(), canSell(), buyPrice, sellPrice, unit, new ShopDataModel.ShopLocation(signLoc.getBlockX(), signLoc.getBlockY(), signLoc.getBlockZ()));
     }
 
     public Material getStockedMaterial()
