@@ -4,6 +4,7 @@ import com.Acrobot.ChestShop.ChestShop;
 import com.google.gson.Gson;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -89,6 +90,27 @@ public class ShopDB extends JavaPlugin
 
             config.reload();
             sender.sendMessage(ChatColor.GREEN + "Reloaded ShopDB configuration");
+        }
+
+        if (label.equalsIgnoreCase("testchunkindex"))
+        {
+            if (!(sender.hasPermission("shopdb.runindex") || sender.isOp()))
+            {
+                sender.sendMessage(ChatColor.RED + "You don't have permission to run this command!");
+                return true;
+            }
+
+            if (!(sender instanceof Player))
+            {
+                sender.sendMessage(ChatColor.RED + "Only players can use this command!");
+                return true;
+            }
+
+            Player ply = (Player) sender;
+            int x = ply.getLocation().getBlockX() >> 4;
+            int z = ply.getLocation().getBlockZ() >> 4;
+            List<WrappedShop> shops = ShopUtils.getValidShopsInChunk(ply.getWorld().getChunkAt(x, z));
+            ply.sendMessage(ChatColor.GREEN + "Found " + shops.size() + " in your current chunk");
         }
 
         return false;

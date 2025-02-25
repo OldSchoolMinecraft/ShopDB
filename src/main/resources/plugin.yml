@@ -11,3 +11,7 @@ commands:
     description: Reload ShopDB configuration
     permission: shopdb.reload
     default: op
+  testchunkindex:
+    description: Test chunk index
+    permission: shopdb.runindex
+    default: op
