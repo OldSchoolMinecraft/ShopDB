@@ -8,9 +8,10 @@ public class ShopDataModel
     public boolean canBuy, canSell;
     public float buyPrice, sellPrice;
     public int unit;
-    private ShopLocation location;
+    public String shopDataHash;
+    public ShopLocation location;
 
-    public ShopDataModel(String owner, int availableStock, int materialID, boolean canBuy, boolean canSell, float buyPrice, float sellPrice, int unit, ShopLocation location)
+    public ShopDataModel(String owner, int availableStock, int materialID, boolean canBuy, boolean canSell, float buyPrice, float sellPrice, int unit, String shopDataHash, ShopLocation location)
     {
         this.owner = owner;
         this.availableStock = availableStock;
@@ -20,6 +21,7 @@ public class ShopDataModel
         this.buyPrice = buyPrice;
         this.sellPrice = sellPrice;
         this.unit = unit;
+        this.shopDataHash = shopDataHash;
         this.location = location;
     }
 
