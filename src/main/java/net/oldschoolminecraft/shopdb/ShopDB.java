@@ -68,7 +68,7 @@ public class ShopDB extends JavaPlugin
         String rawPath = formattedExportFile.getName().replace(".json", "");
         try (FileWriter writer = new FileWriter(rawPath + "-formatted.json"))
         {
-            gsonMin.toJson(serializable, writer);
+            gsonPretty.toJson(serializable, writer);
         } catch (IOException e) {
             System.err.println("Failed to save shop data!");
             e.printStackTrace(System.err);
