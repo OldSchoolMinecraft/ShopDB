@@ -63,7 +63,7 @@ public class ShopUtils
 
         for (WrappedShop shop : shops)
         {
-            String hash = shop.generateHash();
+            String hash = shop.getHash();
             if (seenHashes.add(hash))
                 uniqueShops.add(shop);
         }

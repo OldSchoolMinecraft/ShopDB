@@ -22,6 +22,7 @@ public class WrappedShop
     private Material stockedMaterial;
     private int unit;
     private int availableStock;
+    private String hash;
 
     public WrappedShop(Chest chest, Sign sign)
     {
@@ -34,9 +35,15 @@ public class WrappedShop
         this.stockedMaterial = stock.getType();
         this.unit = uSign.itemAmount(sign.getLine(1));
         this.availableStock = uInventory.amount(chest.getInventory(), stock, stock.getDurability());
+        hash = generateHash();
     }
 
-    public String generateHash()
+    public String getHash()
+    {
+        return hash;
+    }
+
+    private String generateHash()
     {
         try
         {
