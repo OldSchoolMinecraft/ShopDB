@@ -2,9 +2,9 @@ package net.oldschoolminecraft.shopdb;
 
 import com.Acrobot.ChestShop.ChestShop;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -22,7 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ShopDB extends JavaPlugin
 {
-    private Gson gson = new Gson();
+    private Gson gsonMin = new Gson();
+    private Gson gsonPretty = new GsonBuilder().setPrettyPrinting().create();
     private ShopDBConfig config;
 
     public void onEnable()
@@ -54,9 +55,20 @@ public class ShopDB extends JavaPlugin
         List<ShopDataModel> serializable = new ArrayList<>();
         for (WrappedShop shop : shops)
             serializable.add(shop.getSerializable());
+
         try (FileWriter writer = new FileWriter(config.getString("dataExportFile")))
         {
-            gson.toJson(serializable, writer);
+            gsonMin.toJson(serializable, writer);
+        } catch (IOException e) {
+            System.err.println("Failed to save shop data!");
+            e.printStackTrace(System.err);
+        }
+
+        File formattedExportFile = new File(config.getString("dataExportFile"));
+        String rawPath = formattedExportFile.getName().replace(".json", "");
+        try (FileWriter writer = new FileWriter(rawPath + "-formatted.json"))
+        {
+            gsonMin.toJson(serializable, writer);
         } catch (IOException e) {
             System.err.println("Failed to save shop data!");
             e.printStackTrace(System.err);

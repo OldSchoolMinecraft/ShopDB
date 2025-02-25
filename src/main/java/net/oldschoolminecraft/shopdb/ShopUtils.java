@@ -11,7 +11,9 @@ import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -31,9 +33,9 @@ public class ShopUtils
         int maxZ = Math.max(startZ, endZ);
 
         // Iterate through chunks in the specified region
-        for (int chunkX = minX >> 4; chunkX <= maxX >> 4; chunkX++)
+        for (int chunkX = (minX >> 4); chunkX < (maxX >> 4); chunkX++)
         {
-            for (int chunkZ = minZ >> 4; chunkZ <= maxZ >> 4; chunkZ++)
+            for (int chunkZ = (minZ >> 4); chunkZ < (maxZ >> 4); chunkZ++)
             {
                 Chunk chunk = world.getChunkAt(chunkX, chunkZ);
                 if (!chunk.isLoaded())
@@ -48,8 +50,24 @@ public class ShopUtils
             }
         }
 
-        LOGGER.info("[ShopDB] Processed " + chunksProcessed + " chunks and found " + shops.size() + " shop(s)!");
-        return shops;
+        List<WrappedShop> finalShopsList = getUnduplicatedList(shops);
+
+        LOGGER.info("[ShopDB] Processed " + chunksProcessed + " chunks and found " + finalShopsList.size() + " shop(s)!");
+        return finalShopsList;
+    }
+
+    public static List<WrappedShop> getUnduplicatedList(List<WrappedShop> shops)
+    {
+        Set<String> seenHashes = new HashSet<>();
+        List<WrappedShop> uniqueShops = new ArrayList<>();
+
+        for (WrappedShop shop : shops)
+        {
+            String hash = shop.generateHash();
+            if (seenHashes.add(hash))
+                uniqueShops.add(shop);
+        }
+        return uniqueShops;
     }
 
     public static List<WrappedShop> getValidShopsInChunk(Chunk chunk)
@@ -65,7 +83,16 @@ public class ShopUtils
 //            LOGGER.warning("[ShopDB] There are no tile entities for chunk: " + chunk.getX() + ", " + chunk.getZ());
         for (BlockState blockState : chunk.getTileEntities())
         {
-            if (blockState.getType() == Material.CHEST)
+            // look for all signs
+            if (blockState.getType() == Material.SIGN || blockState.getType() == Material.SIGN_POST || blockState.getType() == Material.WALL_SIGN)
+            {
+                Sign sign = (Sign) blockState;
+                Chest chest = uBlock.findChest(sign);
+                if (uSign.isValid(sign) && chest != null)
+                    shops.add(new WrappedShop(chest, sign));
+            }
+
+            /*if (blockState.getType() == Material.CHEST)
             {
                 Chest chest = (Chest) blockState;
 //                LOGGER.info("[ShopDB] Found chest at: " + chest.getBlock().getLocation());
@@ -77,13 +104,13 @@ public class ShopUtils
                     {
 //                        LOGGER.info("[ShopDB] Valid sign at: " + sign.getBlock().getLocation());
                         shops.add(new WrappedShop(chest, sign));
-                    } /*else {
+                    } else {
                         LOGGER.info("[ShopDB] Invalid sign at: " + sign.getBlock().getLocation());
-                    }*/
-                } /*else {
+                    }
+                } else {
                     LOGGER.info("[ShopDB] No sign found near chest at: " + chest.getBlock().getLocation());
-                }*/
-            }
+                }
+            }*/
         }
         return shops;
     }

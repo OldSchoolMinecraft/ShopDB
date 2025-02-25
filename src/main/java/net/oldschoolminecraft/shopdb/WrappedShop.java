@@ -9,6 +9,10 @@ import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.inventory.ItemStack;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 public class WrappedShop
 {
     private Chest chest;
@@ -30,6 +34,25 @@ public class WrappedShop
         this.stockedMaterial = stock.getType();
         this.unit = uSign.itemAmount(sign.getLine(1));
         this.availableStock = uInventory.amount(chest.getInventory(), stock, stock.getDurability());
+    }
+
+    public String generateHash()
+    {
+        try
+        {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            String data = owner + buyPrice + sellPrice + stockedMaterial.name() + unit + availableStock;
+            byte[] hashBytes = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes)
+            {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-1 Algorithm not found", e);
+        }
     }
 
     public ShopDataModel getSerializable()
