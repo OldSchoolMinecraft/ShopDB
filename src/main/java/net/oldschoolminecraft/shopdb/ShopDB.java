@@ -42,22 +42,26 @@ public class ShopDB extends JavaPlugin
     {
         Instant start = Instant.now();
         ArrayList<SearchRegion> searchRegions = config.getSearchRegions();
+        ArrayList<WrappedShop> shops = new ArrayList<>();
         for (SearchRegion region : searchRegions)
         {
             World world = Bukkit.getWorld(region.worldName);
-            List<WrappedShop> shops = ShopUtils.getShopsInRegion(world, region.startX, region.endX, region.startZ, region.endZ);
-            if (sender != null) sender.sendMessage(ChatColor.GRAY + "Found " + shops.size() + " shop(s) in region: " + region.regionName);
-            List<ShopDataModel> serializable = new ArrayList<>();
-            for (WrappedShop shop : shops)
-                serializable.add(shop.getSerializable());
-            try (FileWriter writer = new FileWriter(config.getString("dataExportFile")))
-            {
-                gson.toJson(serializable, writer);
-            } catch (IOException e) {
-                System.err.println("Failed to save shop data!");
-                e.printStackTrace(System.err);
-            }
+            List<WrappedShop> foundShops = ShopUtils.getShopsInRegion(world, region.startX, region.endX, region.startZ, region.endZ);
+            if (sender != null) sender.sendMessage(ChatColor.GRAY + "Found " + foundShops.size() + " shop(s) in region: " + region.regionName);
+            shops.addAll(foundShops);
         }
+
+        List<ShopDataModel> serializable = new ArrayList<>();
+        for (WrappedShop shop : shops)
+            serializable.add(shop.getSerializable());
+        try (FileWriter writer = new FileWriter(config.getString("dataExportFile")))
+        {
+            gson.toJson(serializable, writer);
+        } catch (IOException e) {
+            System.err.println("Failed to save shop data!");
+            e.printStackTrace(System.err);
+        }
+
         Instant duration = Instant.now().minus(start.getNano(), ChronoUnit.NANOS);
         String msg = "Finished shop DB update in " + TimeUnit.NANOSECONDS.toSeconds(duration.getNano()) + " seconds";
         System.out.println("[ShopDB] " + msg);
