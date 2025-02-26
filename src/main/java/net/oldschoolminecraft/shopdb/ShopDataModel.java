@@ -4,6 +4,7 @@ public class ShopDataModel
 {
     public String owner;
     public int materialID;
+    public int durability;
     public int availableStock;
     public boolean canBuy, canSell;
     public float buyPrice, sellPrice;
@@ -16,6 +17,7 @@ public class ShopDataModel
         this.owner = owner;
         this.availableStock = availableStock;
         this.materialID = materialID;
+        this.durability = durability;
         this.canBuy = canBuy;
         this.canSell = canSell;
         this.buyPrice = buyPrice;
