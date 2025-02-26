@@ -11,7 +11,7 @@ public class ShopDataModel
     public String shopDataHash;
     public ShopLocation location;
 
-    public ShopDataModel(String owner, int availableStock, int materialID, boolean canBuy, boolean canSell, float buyPrice, float sellPrice, int unit, String shopDataHash, ShopLocation location)
+    public ShopDataModel(String owner, int availableStock, int materialID, int durability, boolean canBuy, boolean canSell, float buyPrice, float sellPrice, int unit, String shopDataHash, ShopLocation location)
     {
         this.owner = owner;
         this.availableStock = availableStock;
