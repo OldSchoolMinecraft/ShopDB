@@ -90,6 +90,7 @@ public class ShopUtils
                 if (uSign.isValid(sign) && chest != null)
                 {
                     List<Chest> attachedChests = new ArrayList<>();
+                    attachedChests.add(chest);
                     for (BlockFace face : CHEST_FACES)
                     {
                         Block relativeBlock = chest.getBlock().getRelative(face);
