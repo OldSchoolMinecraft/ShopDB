@@ -6,9 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Chest;
-import org.bukkit.block.Sign;
+import org.bukkit.block.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,6 +18,7 @@ import java.util.logging.Logger;
 public class ShopUtils
 {
     private static final Logger LOGGER = Bukkit.getLogger();
+    private static final BlockFace[] CHEST_FACES = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
     public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ)
     {
@@ -89,7 +88,16 @@ public class ShopUtils
                 Sign sign = (Sign) blockState;
                 Chest chest = uBlock.findChest(sign);
                 if (uSign.isValid(sign) && chest != null)
-                    shops.add(new WrappedShop(chest, sign));
+                {
+                    List<Chest> attachedChests = new ArrayList<>();
+                    for (BlockFace face : CHEST_FACES)
+                    {
+                        Block relativeBlock = chest.getBlock().getRelative(face);
+                        if (relativeBlock.getType() == Material.CHEST)
+                            attachedChests.add((Chest) relativeBlock.getState());
+                    }
+                    shops.add(new WrappedShop(sign, attachedChests.toArray(new Chest[] {})));
+                }
             }
 
             /*if (blockState.getType() == Material.CHEST)

@@ -12,10 +12,13 @@ import org.bukkit.inventory.ItemStack;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class WrappedShop
 {
-    private Chest chest;
+    private List<Chest> chests;
     private Sign sign;
     private String owner;
     private float buyPrice, sellPrice;
@@ -25,9 +28,10 @@ public class WrappedShop
     private int durability;
     private String shopDataHash;
 
-    public WrappedShop(Chest chest, Sign sign)
+    public WrappedShop(Sign sign, Chest... chests)
     {
-        this.chest = chest;
+        this.chests = new ArrayList<>();
+        this.chests.addAll(Arrays.asList(chests));
         this.sign = sign;
         this.owner = sign.getLine(0);
         this.buyPrice = uSign.buyPrice(sign.getLine(2));
@@ -36,7 +40,8 @@ public class WrappedShop
         this.stockedMaterial = stock.getType();
         this.durability = stock.getDurability();
         this.unit = uSign.itemAmount(sign.getLine(1));
-        this.availableStock = uInventory.amount(chest.getInventory(), stock, stock.getDurability());
+        for (Chest chest : chests)
+            this.availableStock += uInventory.amount(chest.getInventory(), stock, stock.getDurability());
         shopDataHash = generateHash();
     }
 
@@ -83,14 +88,6 @@ public class WrappedShop
     public int getUnit()
     {
         return unit;
-    }
-
-    public int getTotalStock()
-    {
-        int totalCount = 0;
-        for (ItemStack stack : chest.getInventory().getContents())
-            if (stack.getType() == stockedMaterial) totalCount += stack.getAmount();
-        return totalCount;
     }
 
     public String getOwner()
