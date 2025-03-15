@@ -2,6 +2,7 @@ package net.oldschoolminecraft.shopdb;
 
 import com.Acrobot.ChestShop.Items.Items;
 import com.Acrobot.ChestShop.Utils.uInventory;
+import com.Acrobot.ChestShop.Utils.uLongName;
 import com.Acrobot.ChestShop.Utils.uSign;
 import com.LRFLEW.register.payment.forChestShop.methods.EE17;
 import org.bukkit.Location;
@@ -34,7 +35,7 @@ public class WrappedShop
         this.chests = new ArrayList<>();
         this.chests.addAll(Arrays.asList(chests));
         this.sign = sign;
-        this.owner = sign.getLine(0);
+        this.owner = uLongName.getName(sign.getLine(0));
         this.buyPrice = uSign.buyPrice(sign.getLine(2));
         this.sellPrice = uSign.sellPrice(sign.getLine(2));
         ItemStack stock = Items.getItemStack(sign.getLine(3));
