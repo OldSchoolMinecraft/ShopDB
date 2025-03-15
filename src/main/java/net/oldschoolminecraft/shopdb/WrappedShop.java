@@ -3,6 +3,7 @@ package net.oldschoolminecraft.shopdb;
 import com.Acrobot.ChestShop.Items.Items;
 import com.Acrobot.ChestShop.Utils.uInventory;
 import com.Acrobot.ChestShop.Utils.uSign;
+import com.LRFLEW.register.payment.forChestShop.methods.EE17;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
@@ -72,7 +73,8 @@ public class WrappedShop
     public ShopDataModel getSerializable()
     {
         Location signLoc = sign.getBlock().getLocation();
-        return new ShopDataModel(owner, availableStock, stockedMaterial.getId(), getDurability(), canBuy(), canSell(), buyPrice, sellPrice, unit, getHash(), new ShopDataModel.ShopLocation(signLoc.getBlockX(), signLoc.getBlockY(), signLoc.getBlockZ()));
+        double playerBalance = new EE17.EEcoAccount(owner).balance();
+        return new ShopDataModel(owner, playerBalance, availableStock, stockedMaterial.getId(), getDurability(), canBuy(), canSell(), buyPrice, sellPrice, unit, getHash(), new ShopDataModel.ShopLocation(signLoc.getBlockX(), signLoc.getBlockY(), signLoc.getBlockZ()));
     }
 
     public int getDurability()

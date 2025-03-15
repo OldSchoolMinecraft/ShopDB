@@ -3,6 +3,7 @@ package net.oldschoolminecraft.shopdb;
 public class ShopDataModel
 {
     public String owner;
+    public double ownerBalance;
     public int materialID;
     public int durability;
     public int availableStock;
@@ -12,9 +13,10 @@ public class ShopDataModel
     public String shopDataHash;
     public ShopLocation location;
 
-    public ShopDataModel(String owner, int availableStock, int materialID, int durability, boolean canBuy, boolean canSell, float buyPrice, float sellPrice, int unit, String shopDataHash, ShopLocation location)
+    public ShopDataModel(String owner, double ownerBalance, int availableStock, int materialID, int durability, boolean canBuy, boolean canSell, float buyPrice, float sellPrice, int unit, String shopDataHash, ShopLocation location)
     {
         this.owner = owner;
+        this.ownerBalance = ownerBalance;
         this.availableStock = availableStock;
         this.materialID = materialID;
         this.durability = durability;
