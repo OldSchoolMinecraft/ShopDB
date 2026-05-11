@@ -25,6 +25,7 @@ public class ShopDBConfig extends Configuration
     public void write()
     {
         generateConfigOption("dataExportFile", "shop_db.json");
+        generateConfigOption("landmarkSearchRadius", 100);
         generateConfigOption("shopSearchRegions", Arrays.asList("mall1:world:-250,250/-250,250", "mall2:world:-420,420/-420,420"));
     }
 

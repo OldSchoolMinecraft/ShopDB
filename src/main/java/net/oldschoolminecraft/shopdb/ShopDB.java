@@ -3,6 +3,7 @@ package net.oldschoolminecraft.shopdb;
 import com.Acrobot.ChestShop.ChestShop;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -12,8 +13,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -25,6 +28,7 @@ public class ShopDB extends JavaPlugin
     private Gson gsonMin = new Gson();
     private Gson gsonPretty = new GsonBuilder().setPrettyPrinting().create();
     private ShopDBConfig config;
+    private static final String LMK_FILE_PATH = "landmarks.v2.json";
 
     public void onEnable()
     {
@@ -43,6 +47,7 @@ public class ShopDB extends JavaPlugin
     {
         Instant start = Instant.now();
         ArrayList<SearchRegion> searchRegions = config.getSearchRegions();
+        searchRegions.addAll(getLandmarkSearchRegions());
         ArrayList<WrappedShop> shops = new ArrayList<>();
         for (SearchRegion region : searchRegions)
         {
@@ -78,6 +83,65 @@ public class ShopDB extends JavaPlugin
         String msg = "Finished shop DB update in " + TimeUnit.NANOSECONDS.toMillis(duration.getNano()) + "ms";
         System.out.println("[ShopDB] " + msg);
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);
+    }
+
+    private ArrayList<SearchRegion> getLandmarkSearchRegions()
+    {
+        ArrayList<SearchRegion> regions = new ArrayList<>();
+        ArrayList<LandmarkData> landmarks = null;
+
+        File file = new File(LMK_FILE_PATH);
+        if (!file.exists())
+        {
+            System.err.println("[ShopDB] Failed to get search regions from landmarks! (landmarks plugin is likely not installed, or data hasn't been generated yet)");
+            return new ArrayList<>();
+        }
+
+        try (FileReader reader = new FileReader(file))
+        {
+            Gson gson = new Gson();
+            Type listType = new TypeToken<ArrayList<LandmarkData>>() {}.getType();
+            landmarks = gson.fromJson(reader, listType);
+        } catch (IOException e) {
+            System.err.println("Failed to reload landmarks: " + e.getMessage());
+            e.printStackTrace(System.err);
+        }
+
+        if (landmarks == null)
+        {
+            System.err.println("[ShopDB] Failed to parse landmarks file, they will not be indexed! (the file is likely corrupt or contains invalid syntax)");
+            return new ArrayList<>();
+        }
+
+        for (LandmarkData lmk : landmarks)
+        {
+            regions.add(createSearchRegion(lmk.name, lmk.worldName, lmk.getBlockX(), lmk.getBlockZ(), config.getInt("landmarkSearchRadius", 100)));
+        }
+
+        return regions;
+    }
+
+    private SearchRegion createSearchRegion(
+            String regionName,
+            String worldName,
+            int x,
+            int z,
+            int radius)
+    {
+        int startX = x - radius;
+        int endX = x + radius;
+
+        int startZ = z - radius;
+        int endZ = z + radius;
+
+        return new SearchRegion(
+                regionName,
+                worldName,
+                startX,
+                endX,
+                startZ,
+                endZ
+        );
     }
 
     @Override
