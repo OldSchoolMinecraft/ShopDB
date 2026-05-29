@@ -37,8 +37,8 @@ public class ShopDB extends JavaPlugin
         if (chestShop == null)
             System.out.println("[ShopDB] ChestShop appears to not have been loaded yet. The first sweep will be delayed by 3 minutes.");
 
-        // run shop index once per hour with a 3-minute initial delay from startup if chest shop hasn't been loaded yet
-        getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (chestShop == null) ? (20 * 60) * 3 : 0L, (20 * 60) * 60);
+        // run shop index once per hour with a 3-minute initial delay from startup
+        getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
 
         System.out.println("ShopDB enabled");
     }

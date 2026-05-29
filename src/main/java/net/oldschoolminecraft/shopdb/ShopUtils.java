@@ -38,7 +38,7 @@ public class ShopUtils
             {
                 Chunk chunk = world.getChunkAt(chunkX, chunkZ);
                 if (!chunk.isLoaded())
-                    chunk.load(true);
+                    chunk.load(false);
 
                 chunksProcessed++;
 
@@ -46,6 +46,8 @@ public class ShopUtils
                 List<WrappedShop> chunkShops = getValidShopsInChunk(chunk);
 //                LOGGER.info("[ShopDB] Found " + chunkShops.size() + " shop(s) in chunk: " + chunkX + "," + chunkZ);
                 shops.addAll(chunkShops);
+
+                chunk.unload(false);
             }
         }
 
