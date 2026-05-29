@@ -115,7 +115,9 @@ public class ShopDB extends JavaPlugin
 
         for (LandmarkData lmk : landmarks)
         {
-            regions.add(createSearchRegion(lmk.name, lmk.worldName, lmk.getBlockX(), lmk.getBlockZ(), config.getInt("landmarkSearchRadius", 100)));
+            int defaultSearchRadius = config.getInt("defaultSearchRadius", 100);
+            int lmkSearchRadius = config.getInt("lmk." + lmk.name + ".radius", defaultSearchRadius);
+            regions.add(createSearchRegion(lmk.name, lmk.worldName, lmk.getBlockX(), lmk.getBlockZ(), lmkSearchRadius));
         }
 
         return regions;

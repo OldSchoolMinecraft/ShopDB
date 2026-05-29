@@ -53,7 +53,8 @@ public class ShopUtils
 
         List<WrappedShop> finalShopsList = getUnduplicatedList(shops);
 
-        LOGGER.info("[ShopDB] Processed " + chunksProcessed + " chunks and found " + finalShopsList.size() + " shop(s)!");
+        if (chunksProcessed > 0 && !finalShopsList.isEmpty())
+            LOGGER.info("[ShopDB] Processed " + chunksProcessed + " chunks and found " + finalShopsList.size() + " shop(s)!");
         return finalShopsList;
     }
 
