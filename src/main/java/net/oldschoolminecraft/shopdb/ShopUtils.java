@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Logger;
 
 public class ShopUtils
@@ -51,6 +53,10 @@ public class ShopUtils
                 shops.addAll(chunkShops);
 
                 if (!chunkAlreadyLoaded && !isPlayerChunk(chunk) && tryUnload) chunk.unload(false);
+
+                // park for 50 millis between chunks to give the CPU room to breathe.
+                // we also want to make sure the server can catch up with all the loading and unloading.
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50));
             }
         }
 
