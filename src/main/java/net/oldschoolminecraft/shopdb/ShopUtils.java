@@ -7,12 +7,13 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class ShopUtils
@@ -20,7 +21,7 @@ public class ShopUtils
     private static final Logger LOGGER = Bukkit.getLogger();
     private static final BlockFace[] CHEST_FACES = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
-    public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ)
+    public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ, boolean tryUnload)
     {
         List<WrappedShop> shops = new ArrayList<>();
         int chunksProcessed = 0;
@@ -36,8 +37,10 @@ public class ShopUtils
         {
             for (int chunkZ = (minZ >> 4); chunkZ < (maxZ >> 4); chunkZ++)
             {
+                boolean chunkAlreadyLoaded = world.isChunkLoaded(chunkX, chunkZ);
                 Chunk chunk = world.getChunkAt(chunkX, chunkZ);
-                if (!chunk.isLoaded())
+                if (chunk == null) continue; // for whatever reason it could be null, we must skip it.
+                if (!chunkAlreadyLoaded)
                     chunk.load(false);
 
                 chunksProcessed++;
@@ -47,7 +50,7 @@ public class ShopUtils
 //                LOGGER.info("[ShopDB] Found " + chunkShops.size() + " shop(s) in chunk: " + chunkX + "," + chunkZ);
                 shops.addAll(chunkShops);
 
-                chunk.unload(false);
+                if (!chunkAlreadyLoaded && !isPlayerChunk(chunk) && tryUnload) chunk.unload(false);
             }
         }
 
@@ -56,6 +59,32 @@ public class ShopUtils
         if (chunksProcessed > 0 && !finalShopsList.isEmpty())
             LOGGER.info("[ShopDB] Processed " + chunksProcessed + " chunks and found " + finalShopsList.size() + " shop(s)!");
         return finalShopsList;
+    }
+
+    private static boolean isPlayerChunk(Chunk chunk)
+    {
+        // if there are any Player's within the chunk itself, we can safely skip the view-distance check
+        for (Entity ent : chunk.getEntities())
+        {
+            if (ent instanceof Player)
+                return true;
+        }
+
+        int cx = chunk.getX();
+        int cz = chunk.getZ();
+
+        // check if any online players are within view distance of the given chunk
+        for (Player player : Bukkit.getServer().getOnlinePlayers())
+        {
+            int pcx = player.getLocation().getBlockX() >> 4;
+            int pcz = player.getLocation().getBlockZ() >> 4;
+
+            // Beta 1.7.3 default view distance is 10 chunks, but we can grab the configured value
+            if (Math.abs(pcx - cx) <= Bukkit.getViewDistance() && Math.abs(pcz - cz) <= Bukkit.getViewDistance())
+                return true;
+        }
+
+        return false;
     }
 
     public static List<WrappedShop> getUnduplicatedList(List<WrappedShop> shops)
