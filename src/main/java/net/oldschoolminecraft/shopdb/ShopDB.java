@@ -56,9 +56,9 @@ public class ShopDB extends JavaPlugin
             List<WrappedShop> foundShops = ShopUtils.getShopsInRegion(world, region.startX, region.endX, region.startZ, region.endZ, config.getBoolean("tryUnloadChunks", true));
             if (sender != null) sender.sendMessage(ChatColor.GRAY + "Found " + foundShops.size() + " shop(s) in region: " + region.regionName);
             shops.addAll(foundShops);
-            // park for 1 second to give the CPU room to breathe.
+            // park for 100 millis to give the CPU room to breathe.
             // this function SHOULD be run asynchronously, so it shouldn't be an issue.
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(100));
         }
 
         List<ShopDataModel> serializable = new ArrayList<>();

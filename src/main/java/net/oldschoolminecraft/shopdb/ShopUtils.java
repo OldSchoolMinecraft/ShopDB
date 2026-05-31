@@ -54,9 +54,9 @@ public class ShopUtils
 
                 if (!chunkAlreadyLoaded && !isPlayerChunk(chunk) && tryUnload) chunk.unload(false);
 
-                // park for 50 millis between chunks to give the CPU room to breathe.
+                // park for 25 millis between chunks to give the CPU room to breathe.
                 // we also want to make sure the server can catch up with all the loading and unloading.
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50));
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(25));
             }
         }
 
@@ -115,7 +115,6 @@ public class ShopUtils
             return new ArrayList<>();
         }
         List<WrappedShop> shops = new ArrayList<>();
-        BlockState[] tileEntities = chunk.getTileEntities();
 //        if (tileEntities.length == 0)
 //            LOGGER.warning("[ShopDB] There are no tile entities for chunk: " + chunk.getX() + ", " + chunk.getZ());
         for (BlockState blockState : chunk.getTileEntities())
@@ -138,26 +137,6 @@ public class ShopUtils
                     shops.add(new WrappedShop(sign, attachedChests.toArray(new Chest[] {})));
                 }
             }
-
-            /*if (blockState.getType() == Material.CHEST)
-            {
-                Chest chest = (Chest) blockState;
-//                LOGGER.info("[ShopDB] Found chest at: " + chest.getBlock().getLocation());
-                Sign sign = uBlock.findSign(chest.getBlock());
-                if (sign != null)
-                {
-//                    LOGGER.info("[ShopDB] Found sign at: " + sign.getBlock().getLocation());
-                    if (uSign.isValid(sign))
-                    {
-//                        LOGGER.info("[ShopDB] Valid sign at: " + sign.getBlock().getLocation());
-                        shops.add(new WrappedShop(chest, sign));
-                    } else {
-                        LOGGER.info("[ShopDB] Invalid sign at: " + sign.getBlock().getLocation());
-                    }
-                } else {
-                    LOGGER.info("[ShopDB] No sign found near chest at: " + chest.getBlock().getLocation());
-                }
-            }*/
         }
         return shops;
     }
