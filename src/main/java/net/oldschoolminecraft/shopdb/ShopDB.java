@@ -46,7 +46,7 @@ public class ShopDB extends JavaPlugin
 
     private synchronized void runShopIndex(CommandSender sender)
     {
-        Instant start = Instant.now();
+        long startMs = System.currentTimeMillis();
         ArrayList<SearchRegion> searchRegions = config.getSearchRegions();
         searchRegions.addAll(getLandmarkSearchRegions());
         ArrayList<WrappedShop> shops = new ArrayList<>();
@@ -83,7 +83,7 @@ public class ShopDB extends JavaPlugin
             e.printStackTrace(System.err);
         }
 
-        Instant duration = Instant.now().minus(start.getNano(), ChronoUnit.NANOS);
+        Instant duration = Instant.now().minus(startMs, ChronoUnit.MILLIS);
         String msg = "Finished shop DB update in " + TimeUnit.NANOSECONDS.toMillis(duration.getNano()) + "ms";
         System.out.println("[ShopDB] " + msg);
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);

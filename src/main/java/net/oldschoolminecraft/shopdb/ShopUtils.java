@@ -75,8 +75,8 @@ public class ShopUtils
 
                 chunksProcessed++;
 
-                // Park for 25 ms between chunks to keep the server breathing.
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(25));
+                // Park between chunks to keep the server breathing.
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(5));
             }
         }
 
