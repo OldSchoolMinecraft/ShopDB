@@ -53,7 +53,7 @@ public class ShopDB extends JavaPlugin
         for (SearchRegion region : searchRegions)
         {
             World world = Bukkit.getWorld(region.worldName);
-            List<WrappedShop> foundShops = ShopUtils.getShopsInRegion(world, region.startX, region.endX, region.startZ, region.endZ, config.getBoolean("tryUnloadChunks", true));
+            List<WrappedShop> foundShops = ShopUtils.getShopsInRegion(world, region.startX, region.endX, region.startZ, region.endZ);
             if (sender != null) sender.sendMessage(ChatColor.GRAY + "Found " + foundShops.size() + " shop(s) in region: " + region.regionName);
             shops.addAll(foundShops);
             // park to give the CPU room to breathe.

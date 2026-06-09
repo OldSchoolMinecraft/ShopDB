@@ -36,7 +36,7 @@ public class ShopUtils
      */
     private static final Pattern CHESTSHOP_PRICE_PATTERN = Pattern.compile("^[BS]\\s[\\d: ]+[BS]$");
 
-    public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ, boolean tryUnload)
+    public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ)
     {
         List<WrappedShop> shops = new ArrayList<>();
         int chunksProcessed = 0;
