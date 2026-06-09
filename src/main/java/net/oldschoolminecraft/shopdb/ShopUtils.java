@@ -87,17 +87,38 @@ public class ShopUtils
     }
 
     /**
-     * Reads chunk NBT directly from the region file and returns any valid ChestShop
+     * Reads chunk (and neighbors) NBT directly from the region file and returns any valid ChestShop
      * shops found within it, without ever loading the chunk into the world.
      */
     private static List<WrappedShop> collectShopsViaNBT(World world, int chunkX, int chunkZ) throws IOException
     {
         DataInputStream in = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ);
+        DataInputStream in_NX = RegionFileCache.c(new File(world.getName()), chunkX + 1, chunkZ);
+        DataInputStream in_SX = RegionFileCache.c(new File(world.getName()), chunkX - 1, chunkZ);
+        DataInputStream in_NZ = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ + 1);
+        DataInputStream in_SZ = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ - 1);
         if (in == null) return Collections.emptyList(); // chunk has never been generated
 
         NBTTagCompound chunkNbt = CompressedStreamTools.a((DataInput) in);
-        NBTTagCompound level = chunkNbt.k("Level");
-        NBTTagList tileEntities = level.l("TileEntities");
+        NBTTagCompound chunkNbt_NX = CompressedStreamTools.a((DataInput) in_NX);
+        NBTTagCompound chunkNbt_SX = CompressedStreamTools.a((DataInput) in_SX);
+        NBTTagCompound chunkNbt_NZ = CompressedStreamTools.a((DataInput) in_NZ);
+        NBTTagCompound chunkNbt_SZ = CompressedStreamTools.a((DataInput) in_SZ);
+
+        NBTTagCompound[] chunkNbts = new NBTTagCompound[] {
+                chunkNbt,
+                chunkNbt_NX, chunkNbt_SX,
+                chunkNbt_NZ, chunkNbt_SZ
+        };
+
+        NBTTagCompound[] levels = new NBTTagCompound[chunkNbts.length];
+        NBTTagList[] tileEntityLists = new NBTTagList[chunkNbts.length];
+
+        for (int i = 0; i < chunkNbts.length; i++)
+        {
+            levels[i] = chunkNbts[i].k("Level");
+            tileEntityLists[i] = levels[i].l("TileEntities");
+        }
 
         // --- Pass 1: bucket all sign and chest NBT compounds by "x,y,z" key. ---
 
@@ -105,17 +126,20 @@ public class ShopUtils
         Map<String, NBTTagCompound> signNbts = new LinkedHashMap<>();
         Map<String, NBTTagCompound> chestNbts = new HashMap<>();
 
-        for (int i = 0; i < tileEntities.c(); i++)
+        for (NBTTagList tileEntList : tileEntityLists)
         {
-            NBTBase raw = tileEntities.a(i);
-            if (!(raw instanceof NBTTagCompound)) continue;
-            NBTTagCompound te = (NBTTagCompound) raw;
-            String id = te.getString("id");
+            for (int i = 0; i < tileEntList.c(); i++)
+            {
+                NBTBase raw = tileEntList.a(i);
+                if (!(raw instanceof NBTTagCompound)) continue;
+                NBTTagCompound te = (NBTTagCompound) raw;
+                String id = te.getString("id");
 
-            if ("Sign".equals(id))
-                signNbts.put(coordKey(te), te);
-            else if ("Chest".equals(id))
-                chestNbts.put(coordKey(te), te);
+                if ("Sign".equals(id))
+                    signNbts.put(coordKey(te), te);
+                else if ("Chest".equals(id))
+                    chestNbts.put(coordKey(te), te);
+            }
         }
 
         if (signNbts.isEmpty() || chestNbts.isEmpty()) return Collections.emptyList();
