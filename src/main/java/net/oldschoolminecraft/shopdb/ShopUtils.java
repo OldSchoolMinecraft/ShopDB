@@ -75,7 +75,7 @@ public class ShopUtils
                 chunksProcessed++;
 
                 // Park between chunks to keep the server breathing.
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(5));
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
             }
         }
 
@@ -99,16 +99,10 @@ public class ShopUtils
         DataInputStream in_SZ = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ - 1);
         if (in == null) return Collections.emptyList(); // chunk has never been generated
 
-        NBTTagCompound chunkNbt = CompressedStreamTools.a((DataInput) in);
-        NBTTagCompound chunkNbt_NX = CompressedStreamTools.a((DataInput) in_NX);
-        NBTTagCompound chunkNbt_SX = CompressedStreamTools.a((DataInput) in_SX);
-        NBTTagCompound chunkNbt_NZ = CompressedStreamTools.a((DataInput) in_NZ);
-        NBTTagCompound chunkNbt_SZ = CompressedStreamTools.a((DataInput) in_SZ);
-
         NBTTagCompound[] chunkNbts = new NBTTagCompound[] {
-                chunkNbt,
-                chunkNbt_NX, chunkNbt_SX,
-                chunkNbt_NZ, chunkNbt_SZ
+                tryGetCompound(in),
+                tryGetCompound(in_NX), tryGetCompound(in_SX),
+                tryGetCompound(in_NZ), tryGetCompound(in_SZ)
         };
 
         NBTTagCompound[] levels = new NBTTagCompound[chunkNbts.length];
@@ -116,7 +110,9 @@ public class ShopUtils
 
         for (int i = 0; i < chunkNbts.length; i++)
         {
-            levels[i] = chunkNbts[i].k("Level");
+            NBTTagCompound compound = chunkNbts[i];
+            if (compound == null) continue;
+            levels[i] = compound.k("Level");
             tileEntityLists[i] = levels[i].l("TileEntities");
         }
 
@@ -128,6 +124,7 @@ public class ShopUtils
 
         for (NBTTagList tileEntList : tileEntityLists)
         {
+            if (tileEntList == null) continue; // list is null, move on
             for (int i = 0; i < tileEntList.c(); i++)
             {
                 NBTBase raw = tileEntList.a(i);
@@ -189,6 +186,17 @@ public class ShopUtils
         }
 
         return shops;
+    }
+
+    private static NBTTagCompound tryGetCompound(DataInputStream in)
+    {
+        try
+        {
+            if (in == null) return null; // don't even try lol
+            return CompressedStreamTools.a((DataInput) in);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     // -------------------------------------------------------------------------
