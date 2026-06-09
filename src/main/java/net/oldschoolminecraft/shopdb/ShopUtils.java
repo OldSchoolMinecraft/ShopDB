@@ -15,10 +15,7 @@ import org.bukkit.craftbukkit.block.CraftChest;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -96,7 +93,7 @@ public class ShopUtils
         DataInputStream in = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ);
         if (in == null) return Collections.emptyList(); // chunk has never been generated
 
-        NBTTagCompound chunkNbt = CompressedStreamTools.a((InputStream) in);
+        NBTTagCompound chunkNbt = CompressedStreamTools.a((DataInput) in);
         NBTTagCompound level = chunkNbt.k("Level");
         NBTTagList tileEntities = level.l("TileEntities");
 

@@ -83,8 +83,8 @@ public class ShopDB extends JavaPlugin
             e.printStackTrace(System.err);
         }
 
-        Instant duration = Instant.now().minus(startMs, ChronoUnit.MILLIS);
-        String msg = "Finished shop DB update in " + TimeUnit.NANOSECONDS.toMillis(duration.getNano()) + "ms";
+        long elapsedMs = System.currentTimeMillis() - startMs;
+        String msg = "Finished shop DB update in " + elapsedMs + "ms";
         System.out.println("[ShopDB] " + msg);
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);
     }
