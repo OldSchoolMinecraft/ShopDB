@@ -11,7 +11,9 @@ import org.bukkit.block.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftChest;
+import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -105,7 +107,9 @@ public class ShopUtils
 
         for (int i = 0; i < tileEntities.c(); i++)
         {
-            NBTTagCompound te = (NBTTagCompound) tileEntities.a(i);
+            NBTBase raw = tileEntities.a(i);
+            if (!(raw instanceof NBTTagCompound)) continue;
+            NBTTagCompound te = (NBTTagCompound) raw;
             String id = te.getString("id");
 
             if ("Sign".equals(id))
@@ -122,10 +126,12 @@ public class ShopUtils
 
         for (NBTTagCompound signNbt : signNbts.values())
         {
-            // Replicate uSign.isValid(): line 3 (Text3) must match the price pattern.
-            String priceLine = signNbt.getString("Text3");
-            if (priceLine == null || !CHESTSHOP_PRICE_PATTERN.matcher(priceLine.trim()).matches())
-                continue;
+            if (!uSign.isValid(new String[] {
+                signNbt.getString("Text1"),
+                signNbt.getString("Text2"),
+                signNbt.getString("Text3"),
+                signNbt.getString("Text4")
+            })) continue;
 
             int sx = signNbt.e("x");
             int sy = signNbt.e("y");
@@ -142,12 +148,15 @@ public class ShopUtils
             int cx = primaryChest.e("x");
             int cy = primaryChest.e("y");
             int cz = primaryChest.e("z");
+            String primaryKey = coordKey(cx, cy, cz);
 
-            // Replicate the face-loop in getValidShopsInChunk (N, E, S, W offsets).
-            int[][] cardinalOffsets = {{0,0,-1},{1,0,0},{0,0,1},{-1,0,0}};
+            // Replicate the face-loop in getValidShopsInChunk (N, E, S, W offsets + up/down).
+            int[][] cardinalOffsets = {{0,0,-1},{1,0,0},{0,0,1},{-1,0,0},{0,1,0},{0,-1,0}};
             for (int[] d : cardinalOffsets)
             {
-                NBTTagCompound neighbour = chestNbts.get(coordKey(cx + d[0], cy + d[1], cz + d[2]));
+                String neighbourKey = coordKey(cx + d[0], cy + d[1], cz + d[2]);
+                if (neighbourKey.equals(primaryKey)) continue; // guard
+                NBTTagCompound neighbour = chestNbts.get(neighbourKey);
                 if (neighbour != null)
                     attachedChests.add(neighbour);
             }
@@ -176,17 +185,16 @@ public class ShopUtils
 
     /**
      * Replicates {@code uBlock.findChest}: check the block directly below the sign,
-     * then all four cardinal neighbors at the same Y level.
+     * then all four cardinal neighbors + up/down
      */
-    private static NBTTagCompound findAdjacentChestNBT(Map<String, NBTTagCompound> chestNbts,
-                                                       int sx, int sy, int sz)
+    private static NBTTagCompound findAdjacentChestNBT(Map<String, NBTTagCompound> chestNbts, int sx, int sy, int sz)
     {
         // Block directly below the sign.
         NBTTagCompound below = chestNbts.get(coordKey(sx, sy - 1, sz));
         if (below != null) return below;
 
         // Four cardinal neighbors at sign Y.
-        int[][] offsets = {{0,0,-1},{1,0,0},{0,0,1},{-1,0,0}};
+        int[][] offsets = {{0,0,-1},{1,0,0},{0,0,1},{-1,0,0},{0,1,0},{0,-1,0}};
         for (int[] d : offsets)
         {
             NBTTagCompound neighbour = chestNbts.get(coordKey(sx + d[0], sy + d[1], sz + d[2]));
