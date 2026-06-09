@@ -31,6 +31,10 @@ public class ShopDB extends JavaPlugin
     private ShopDBConfig config;
     private static final String LMK_FILE_PATH = "landmarks.v2.json";
 
+    private int autoTaskID = -1;
+    private int manualTaskID = -1;
+    private boolean shopIndexRunning = false;
+
     public void onEnable()
     {
         config = new ShopDBConfig(new File(getDataFolder(), "config.yml"));
@@ -39,13 +43,16 @@ public class ShopDB extends JavaPlugin
             System.out.println("[ShopDB] ChestShop appears to not have been loaded yet. The first sweep will be delayed by 3 minutes.");
 
         // run shop index once per hour with a 3-minute initial delay from startup
-        getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
+        autoTaskID = getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
 
         System.out.println("ShopDB enabled");
     }
 
     private synchronized void runShopIndex(CommandSender sender)
     {
+        if (shopIndexRunning) return;
+        shopIndexRunning = true;
+
         long startMs = System.currentTimeMillis();
         ArrayList<SearchRegion> searchRegions = config.getSearchRegions();
         searchRegions.addAll(getLandmarkSearchRegions());
@@ -87,6 +94,8 @@ public class ShopDB extends JavaPlugin
         String msg = "Finished shop DB update in " + elapsedMs + "ms";
         System.out.println("[ShopDB] " + msg);
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);
+
+        shopIndexRunning = false;
     }
 
     private ArrayList<SearchRegion> getLandmarkSearchRegions()
@@ -161,8 +170,59 @@ public class ShopDB extends JavaPlugin
                 return true;
             }
 
+            if (manualTaskID != -1)
+            {
+                sender.sendMessage(ChatColor.RED + "You already have a shop index running...");
+                return true;
+            }
+
+            if (shopIndexRunning)
+            {
+                sender.sendMessage(ChatColor.RED + "Automatic shop index is currently running!");
+                return true;
+            }
+
             sender.sendMessage(ChatColor.GRAY + "Running shop index...");
-            Bukkit.getScheduler().scheduleAsyncDelayedTask(this, () -> runShopIndex(sender), 0L);
+
+            manualTaskID = getServer().getScheduler().scheduleAsyncDelayedTask(this, () -> {
+                runShopIndex(sender);
+                manualTaskID = -1;
+            }, 0L);
+            return true;
+        }
+
+        if (label.equalsIgnoreCase("stop-autoindex"))
+        {
+            if (!(sender.hasPermission("shopdb.cancelauto") || sender.isOp()))
+            {
+                sender.sendMessage(ChatColor.RED + "You don't have permission to run this command!");
+                return true;
+            }
+
+            getServer().getScheduler().cancelTask(autoTaskID);
+            autoTaskID = -1;
+            sender.sendMessage(ChatColor.RED + "Successfully cancelled repeating index task!");
+            return true;
+        }
+
+        if (label.equalsIgnoreCase("start-autoindex"))
+        {
+            if (!(sender.hasPermission("shopdb.cancelauto") || sender.isOp()))
+            {
+                sender.sendMessage(ChatColor.RED + "You don't have permission to run this command!");
+                return true;
+            }
+
+            if (autoTaskID != -1)
+            {
+                sender.sendMessage(ChatColor.RED + "Repeating index task already scheduled!");
+                return true;
+            }
+
+            // run shop index once per hour with a 3-minute initial delay from startup
+            autoTaskID = getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
+
+            sender.sendMessage(ChatColor.GREEN + "Scheduled new repeating index task!");
             return true;
         }
 
