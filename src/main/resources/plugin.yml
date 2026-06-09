@@ -15,3 +15,11 @@ commands:
     description: Test chunk index
     permission: shopdb.runindex
     default: op
+  stop-autoindex:
+    description: Stop ChestShop auto index
+    permission: shopdb.stopauto
+    default: op
+  start-autoindex:
+    description: Start ChestShop auto index
+    permission: shopdb.startauto
+    default: op

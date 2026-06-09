@@ -91,7 +91,7 @@ public class ShopDB extends JavaPlugin
         }
 
         long elapsedMs = System.currentTimeMillis() - startMs;
-        String msg = "Finished shop DB update in " + elapsedMs + "ms";
+        String msg = "Finished shop DB update in " + formatElapsed(elapsedMs);
         System.out.println("[ShopDB] " + msg);
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);
 
@@ -193,7 +193,7 @@ public class ShopDB extends JavaPlugin
 
         if (label.equalsIgnoreCase("stop-autoindex"))
         {
-            if (!(sender.hasPermission("shopdb.cancelauto") || sender.isOp()))
+            if (!(sender.hasPermission("shopdb.stopauto") || sender.isOp()))
             {
                 sender.sendMessage(ChatColor.RED + "You don't have permission to run this command!");
                 return true;
@@ -207,7 +207,7 @@ public class ShopDB extends JavaPlugin
 
         if (label.equalsIgnoreCase("start-autoindex"))
         {
-            if (!(sender.hasPermission("shopdb.cancelauto") || sender.isOp()))
+            if (!(sender.hasPermission("shopdb.startauto") || sender.isOp()))
             {
                 sender.sendMessage(ChatColor.RED + "You don't have permission to run this command!");
                 return true;
@@ -260,6 +260,20 @@ public class ShopDB extends JavaPlugin
         }
 
         return false;
+    }
+
+    public static String formatElapsed(long elapsedMillis)
+    {
+        if (elapsedMillis < 1000)
+            return elapsedMillis + " ms";
+
+        if (elapsedMillis < 60_000)
+            return String.format("%.1f second(s)", elapsedMillis / 1000.0);
+
+        if (elapsedMillis < 3_600_000)
+            return String.format("%.1f minute(s)", elapsedMillis / 60_000.0);
+
+        return String.format("%.1f hour(s)", elapsedMillis / 3_600_000.0);
     }
 
     public void onDisable()
