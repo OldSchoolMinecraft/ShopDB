@@ -34,13 +34,14 @@ public class ShopDB extends JavaPlugin
     private int autoTaskID = -1;
     private int manualTaskID = -1;
     private boolean shopIndexRunning = false;
+    private long lastIndexTime;
 
     public void onEnable()
     {
         config = new ShopDBConfig(new File(getDataFolder(), "config.yml"));
         ChestShop chestShop = (ChestShop) getServer().getPluginManager().getPlugin("ChestShop");
         if (chestShop == null)
-            System.out.println("[ShopDB] ChestShop appears to not have been loaded yet. The first sweep will be delayed by 3 minutes.");
+            System.out.println("[ShopDB] ChestShop appears to not have been loaded yet.");
 
         // run shop index once per hour with a 3-minute initial delay from startup
         autoTaskID = getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
@@ -96,6 +97,7 @@ public class ShopDB extends JavaPlugin
         if (sender != null) sender.sendMessage(ChatColor.GREEN + msg);
 
         shopIndexRunning = false;
+        lastIndexTime = System.currentTimeMillis();
     }
 
     private ArrayList<SearchRegion> getLandmarkSearchRegions()
@@ -219,8 +221,17 @@ public class ShopDB extends JavaPlugin
                 return true;
             }
 
-            // run shop index once per hour with a 3-minute initial delay from startup
-            autoTaskID = getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
+            // -------------------------------------------------------------------------------------------------
+            // run shop index once per hour
+            //
+            // set initial delay to the difference since last run, so we still adhere to the once per hour rule
+            // if the last run was over an hour ago, we set to 0 and run immediately
+            // -------------------------------------------------------------------------------------------------
+            long indexTimeDiff = System.currentTimeMillis() - lastIndexTime;
+            long oneHourMillis = TimeUnit.HOURS.toMillis(1);
+            long initialDelayMillis = (indexTimeDiff >= oneHourMillis) ? 0 : (oneHourMillis - indexTimeDiff);
+            long initialDelayTicks = initialDelayMillis / 50L;
+            autoTaskID = getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), initialDelayTicks, (20 * 60) * 60);
 
             sender.sendMessage(ChatColor.GREEN + "Scheduled new repeating index task!");
             return true;

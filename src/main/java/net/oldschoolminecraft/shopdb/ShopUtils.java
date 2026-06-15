@@ -29,13 +29,6 @@ public class ShopUtils
     private static final Logger LOGGER = Bukkit.getLogger();
     private static final BlockFace[] CHEST_FACES = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
-    /**
-     * ChestShop sign validation pattern (line index 2, i.e. the 3rd line).
-     * Valid examples: "B 64 S", "B 10:5 S", "S 1 B", "B 64:32 S", etc.
-     * Mirrors the core check performed by uSign.isValid().
-     */
-    private static final Pattern CHESTSHOP_PRICE_PATTERN = Pattern.compile("^[BS]\\s[\\d: ]+[BS]$");
-
     public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ)
     {
         List<WrappedShop> shops = new ArrayList<>();
@@ -63,13 +56,8 @@ public class ShopUtils
                 } else {
                     // Chunk is not loaded - read directly from the region file so we
                     // never force a chunk load just to scan for shops.
-                    try
-                    {
-                        List<WrappedShop> chunkShops = collectShopsViaNBT(world, chunkX, chunkZ);
-                        shops.addAll(chunkShops);
-                    } catch (IOException e) {
-                        LOGGER.warning("[ShopDB] Failed to read NBT for chunk " + chunkX + "," + chunkZ + ": " + e.getMessage());
-                    }
+                    List<WrappedShop> chunkShops = collectUnloadedShops(world, chunkX, chunkZ);
+                    shops.addAll(chunkShops);
                 }
 
                 chunksProcessed++;
@@ -90,79 +78,75 @@ public class ShopUtils
      * Reads chunk (and neighbors) NBT directly from the region file and returns any valid ChestShop
      * shops found within it, without ever loading the chunk into the world.
      */
-    private static List<WrappedShop> collectShopsViaNBT(World world, int chunkX, int chunkZ) throws IOException
+    private static List<WrappedShop> collectUnloadedShops(World world, int chunkX, int chunkZ)
     {
-        DataInputStream in = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ);
-        DataInputStream in_NX = RegionFileCache.c(new File(world.getName()), chunkX + 1, chunkZ);
-        DataInputStream in_SX = RegionFileCache.c(new File(world.getName()), chunkX - 1, chunkZ);
-        DataInputStream in_NZ = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ + 1);
-        DataInputStream in_SZ = RegionFileCache.c(new File(world.getName()), chunkX, chunkZ - 1);
-        if (in == null) return Collections.emptyList(); // chunk has never been generated
+        File regionDir = new File(world.getName(), "region");
 
-        NBTTagCompound[] chunkNbts = new NBTTagCompound[] {
-                tryGetCompound(in),
-                tryGetCompound(in_NX), tryGetCompound(in_SX),
-                tryGetCompound(in_NZ), tryGetCompound(in_SZ)
-        };
-
-        NBTTagCompound[] levels = new NBTTagCompound[chunkNbts.length];
-        NBTTagList[] tileEntityLists = new NBTTagList[chunkNbts.length];
-
-        for (int i = 0; i < chunkNbts.length; i++)
+        // primary chunk - if this doesn't exist, nothing to do.
+        NBTTagCompound primaryLevel = readChunkLevel(regionDir, chunkX, chunkZ);
+        if (primaryLevel == null)
         {
-            NBTTagCompound compound = chunkNbts[i];
-            if (compound == null) continue;
-            levels[i] = compound.k("Level");
-            tileEntityLists[i] = levels[i].l("TileEntities");
+            if (new File("shopdb.debug").exists())
+                System.err.println("[ShopDB] Attempted to index missing chunk: " + chunkX + "," + chunkZ);
+            return Collections.emptyList();
         }
 
-        // --- Pass 1: bucket all sign and chest NBT compounds by "x,y,z" key. ---
-
-        // LinkedHashMap preserves insertion order for deterministic results.
-        Map<String, NBTTagCompound> signNbts = new LinkedHashMap<>();
-        Map<String, NBTTagCompound> chestNbts = new HashMap<>();
-
-        for (NBTTagList tileEntList : tileEntityLists)
+        // neighbors
+        NBTTagCompound[] allLevels = new NBTTagCompound[]
         {
-            if (tileEntList == null) continue; // list is null, move on
-            for (int i = 0; i < tileEntList.c(); i++)
+            primaryLevel,
+            readChunkLevel(regionDir, chunkX + 1, chunkZ),
+            readChunkLevel(regionDir, chunkX - 1, chunkZ),
+            readChunkLevel(regionDir, chunkX, chunkZ + 1),
+            readChunkLevel(regionDir, chunkX, chunkZ - 1)
+        };
+
+        // pass 1: bucket all sign and chest NBT compounds by x,y,z key
+        Map<String, NBTTagCompound> signs = new LinkedHashMap<>();
+        Map<String, NBTTagCompound> chests = new HashMap<>();
+
+        for (NBTTagCompound level : allLevels)
+        {
+            if (level == null) continue;
+            NBTTagList entList = level.l("TileEntities");
+            if (entList == null) continue;
+
+            for (int i = 0; i < entList.c(); i++)
             {
-                NBTBase raw = tileEntList.a(i);
+                NBTBase raw = entList.a(i);
                 if (!(raw instanceof NBTTagCompound)) continue;
                 NBTTagCompound te = (NBTTagCompound) raw;
                 String id = te.getString("id");
 
-                if ("Sign".equals(id))
-                    signNbts.put(coordKey(te), te);
-                else if ("Chest".equals(id))
-                    chestNbts.put(coordKey(te), te);
+                if (id.equals("Sign")  || id.equals("323")) signs.put(coordKey(te), te);
+                if (id.equals("Chest") || id.equals("54"))  chests.put(coordKey(te), te);
             }
         }
 
-        if (signNbts.isEmpty() || chestNbts.isEmpty()) return Collections.emptyList();
-
-        // --- Pass 2: validate each sign and associate it with adjacent chests. ---
-
+        // pass 2: validate each sign and associate it with adjacent chests
         List<WrappedShop> shops = new ArrayList<>();
 
-        for (NBTTagCompound signNbt : signNbts.values())
+        for (NBTTagCompound sign : signs.values())
         {
             if (!uSign.isValid(new String[] {
-                signNbt.getString("Text1"),
-                signNbt.getString("Text2"),
-                signNbt.getString("Text3"),
-                signNbt.getString("Text4")
+                    sign.getString("Text1"),
+                    sign.getString("Text2"),
+                    sign.getString("Text3"),
+                    sign.getString("Text4")
             })) continue;
 
-            int sx = signNbt.e("x");
-            int sy = signNbt.e("y");
-            int sz = signNbt.e("z");
+            int sx = sign.e("x");
+            int sy = sign.e("y");
+            int sz = sign.e("z");
 
-            // Replicate uBlock.findChest(): block below first, then cardinal neighbors.
-            NBTTagCompound primaryChest = findAdjacentChestNBT(chestNbts, sx, sy, sz);
-            if (primaryChest == null) continue;
+            NBTTagCompound primaryChest = findAdjacentChestNBT(chests, sx, sy, sz);
+            if (primaryChest == null)
+            {
+                if (new File("shopdb.debug").exists())
+                    System.err.println("[ShopDB] Found valid shop sign, but no adjacent chests @ " + coordKey(sign));
+                continue;
+            }
 
-            // Collect the primary chest and any double-chest partner.
             List<NBTTagCompound> attachedChests = new ArrayList<>();
             attachedChests.add(primaryChest);
 
@@ -171,30 +155,38 @@ public class ShopUtils
             int cz = primaryChest.e("z");
             String primaryKey = coordKey(cx, cy, cz);
 
-            // Replicate the face-loop in getValidShopsInChunk (N, E, S, W offsets + up/down).
             int[][] cardinalOffsets = {{0,0,-1},{1,0,0},{0,0,1},{-1,0,0},{0,1,0},{0,-1,0}};
             for (int[] d : cardinalOffsets)
             {
                 String neighbourKey = coordKey(cx + d[0], cy + d[1], cz + d[2]);
-                if (neighbourKey.equals(primaryKey)) continue; // guard
-                NBTTagCompound neighbour = chestNbts.get(neighbourKey);
+                if (neighbourKey.equals(primaryKey)) continue;
+                NBTTagCompound neighbour = chests.get(neighbourKey);
                 if (neighbour != null)
                     attachedChests.add(neighbour);
             }
 
-            shops.add(new WrappedShop(signNbt, world.getName(), attachedChests));
+            shops.add(new WrappedShop(sign, world.getName(), attachedChests));
         }
 
         return shops;
     }
 
-    private static NBTTagCompound tryGetCompound(DataInputStream in)
+    private static NBTTagCompound readChunkLevel(File regionDir, int chunkX, int chunkZ)
     {
+        // Open a fresh RegionFile each time - no cache
+        File regionFile = new File(regionDir, "r." + (chunkX >> 5) + "." + (chunkZ >> 5) + ".mcr");
+        if (!regionFile.exists()) return null;
+
         try
         {
-            if (in == null) return null; // don't even try lol
-            return CompressedStreamTools.a((DataInput) in);
-        } catch (Exception ignored) {
+            RegionFile rf = new RegionFile(regionFile);
+            DataInputStream in = rf.a(chunkX & 31, chunkZ & 31); // getChunkDataInputStream
+            if (in == null) return null;
+            NBTTagCompound compound = CompressedStreamTools.a((DataInput) in);
+            in.close();
+            rf.b(); // close the RegionFile
+            return compound.k("Level");
+        } catch (Exception e) {
             return null;
         }
     }
