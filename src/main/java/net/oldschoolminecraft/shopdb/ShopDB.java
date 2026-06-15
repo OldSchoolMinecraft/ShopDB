@@ -4,6 +4,7 @@ import com.Acrobot.ChestShop.ChestShop;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import net.oldschoolminecraft.sd.ScheduledDeath;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -36,6 +38,8 @@ public class ShopDB extends JavaPlugin
     private boolean shopIndexRunning = false;
     private long lastIndexTime;
 
+    private ScheduledDeath scheduledDeath;
+
     public void onEnable()
     {
         config = new ShopDBConfig(new File(getDataFolder(), "config.yml"));
@@ -46,12 +50,19 @@ public class ShopDB extends JavaPlugin
         // run shop index once per hour with a 3-minute initial delay from startup
         autoTaskID = getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> runShopIndex(null), (20 * 60) * 3, (20 * 60) * 60);
 
+        scheduledDeath = (ScheduledDeath) getServer().getPluginManager().getPlugin("ScheduledDeath");
+
         System.out.println("ShopDB enabled");
     }
 
     private synchronized void runShopIndex(CommandSender sender)
     {
         if (shopIndexRunning) return;
+
+        // ScheduledDeath is installed, check if we're within 15 minutes of restart
+        if (scheduledDeath != null && getServerTTL() <= 900) // 900 seconds / 15 minutes
+            return;
+
         shopIndexRunning = true;
 
         long startMs = System.currentTimeMillis();
@@ -285,6 +296,18 @@ public class ShopDB extends JavaPlugin
             return String.format("%.1f minute(s)", elapsedMillis / 60_000.0);
 
         return String.format("%.1f hour(s)", elapsedMillis / 3_600_000.0);
+    }
+
+    private int getServerTTL()
+    {
+        try
+        {
+            Field field = ScheduledDeath.class.getDeclaredField("secondsTTL");
+            field.setAccessible(true);
+            return field.getInt(scheduledDeath);
+        } catch (Exception ex) {
+            return -1;
+        }
     }
 
     public void onDisable()

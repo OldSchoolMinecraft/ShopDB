@@ -9,4 +9,5 @@ repositories {
 dependencies {
     implementation(files("libs/poseidon.jar"))
     implementation(files("libs/ChestShop.jar"))
+    implementation(files("libs/ScheduledDeath.jar"))
 }
