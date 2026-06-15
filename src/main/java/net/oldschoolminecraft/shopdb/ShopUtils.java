@@ -3,7 +3,7 @@ package net.oldschoolminecraft.shopdb;
 import com.Acrobot.ChestShop.Utils.uBlock;
 import com.Acrobot.ChestShop.Utils.uSign;
 import net.minecraft.server.*;
-import org.bukkit.Bukkit;
+import org.bukkit.*;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -28,6 +28,10 @@ public class ShopUtils
 {
     private static final Logger LOGGER = Bukkit.getLogger();
     private static final BlockFace[] CHEST_FACES = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+
+    private static final Location[] DEGUG_WATCH_POSITIONS = new Location[] {
+            new Location(Bukkit.getWorld("world"), -42041, 64, -35486)
+    };
 
     public static List<WrappedShop> getShopsInRegion(World world, int startX, int endX, int startZ, int endZ)
     {
@@ -123,6 +127,17 @@ public class ShopUtils
             }
         }
 
+        // pass 1.5: debug step to check if the watch positions have been found or not found
+        for (Location loc : DEGUG_WATCH_POSITIONS)
+        {
+            int locChunkX = loc.getBlockX() >> 4;
+            int locChunkZ = loc.getBlockZ() >> 4;
+            if (!(locChunkX == chunkX && locChunkZ == chunkZ)) continue; // watch pos out of bounds for this chunk
+            String key = coordKey(loc);
+            boolean watchPosFound = signs.containsKey(key);
+            System.err.println("[ShopDB] -- DEBUG -- " + key + " / WATCH POS FOUND? " + (watchPosFound ? "Yes" : "No"));
+        }
+
         // pass 2: validate each sign and associate it with adjacent chests
         List<WrappedShop> shops = new ArrayList<>();
 
@@ -199,6 +214,11 @@ public class ShopUtils
     private static String coordKey(NBTTagCompound te)
     {
         return te.e("x") + "," + te.e("y") + "," + te.e("z");
+    }
+
+    private static String coordKey(Location loc)
+    {
+        return coordKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     /** Returns a "x,y,z" key from explicit coordinates. */
